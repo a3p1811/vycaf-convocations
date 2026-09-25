@@ -1,0 +1,22 @@
+{
+ "v": 1,
+ "iter": 200000,
+ "maj": "2026-09-25T15:35:46.357Z",
+ "users": [
+  {
+   "id": "atef",
+   "nom": "Atef NOUMA",
+   "cats": [
+    "Toutes"
+   ],
+   "role": "admin",
+   "salt": "iOKnFoffBCIxySNA0K5mog==",
+   "iv": "ri++0PwlEEOipl6Q",
+   "wk": "EAdLigFGpD7f+PeZjcjKJdwP3AfpT7Oi0zCC1LAvctga44LToWMkgM3hH8mOhso5"
+  }
+ ],
+ "club": {
+  "iv": "AoMBPDrjbC+iPPfy",
+  "ct": "asiLtbaGpXy/wNRbdnLooEqRA94vpKyAiLM/QQSs/kgElA=="
+ }
+}
