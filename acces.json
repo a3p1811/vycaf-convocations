@@ -1,7 +1,7 @@
 {
  "v": 1,
  "iter": 200000,
- "maj": "2026-09-25T15:35:46.357Z",
+ "maj": "2026-09-25T17:17:39.919Z",
  "users": [
   {
    "id": "atef",
@@ -13,6 +13,17 @@
    "salt": "iOKnFoffBCIxySNA0K5mog==",
    "iv": "ri++0PwlEEOipl6Q",
    "wk": "EAdLigFGpD7f+PeZjcjKJdwP3AfpT7Oi0zCC1LAvctga44LToWMkgM3hH8mOhso5"
+  },
+  {
+   "id": "davy",
+   "nom": "Davy",
+   "cats": [
+    "Toutes"
+   ],
+   "role": "coach",
+   "salt": "YjV0JagreYv198V7LzhsFw==",
+   "iv": "oYJPlMK0mjY9MfRb",
+   "wk": "fZJZndFCi8wGbZDYpciDFpPzRA/HYycvSrJSyyqo4xiwRNNqJQLlIkISzekE4MS7"
   }
  ],
  "club": {
