@@ -214,13 +214,14 @@ input[type=password]{width:100%;background:var(--field);color:var(--ink);border:
       <div class="f"><label for="m_ke">Coup d'envoi</label><input type="time" id="m_ke"></div>
       <div class="f"><label for="m_stade">Stade / gymnase</label><input type="text" id="m_stade" placeholder="Stade Pierre Mollet"></div>
       <div class="f wide"><label for="m_adr">Adresse du match</label><input type="text" id="m_adr" placeholder="N°, rue, code postal, ville"></div>
+      <div class="f wide"><label for="m_maps">Lien Google Maps du point exact (facultatif)</label><input type="text" id="m_maps" inputmode="url" placeholder="Dans Google Maps : Partager → Copier le lien"><span class="hint">Sans lien, l'itinéraire est calculé à partir du stade et de l'adresse.</span></div>
     </div>
   </div>
 
   <div class="card">
     <h2><span class="step">2</span>Rendez-vous & départ</h2>
     <div class="grid">
-      <div class="f"><label for="m_rdvh">Heure du RDV</label><input type="time" id="m_rdvh"></div>
+      <div class="f"><label for="m_rdvh">Heure du RDV au stade</label><input type="time" id="m_rdvh"></div>
       <div class="f"><label for="m_rdvl">Lieu du RDV</label><input type="text" id="m_rdvl" placeholder="Parking du stade, sur place…"></div>
       <div class="f"><label for="m_deph">Heure de départ</label><input type="time" id="m_deph"></div>
       <div class="f"><label for="m_trans">Transport</label>
@@ -336,7 +337,7 @@ input[type=password]{width:100%;background:var(--field);color:var(--ink);border:
       <div class="f wide"><label for="cl_adr">Adresse du siège</label><input type="text" id="cl_adr"></div>
     </div>
     <div class="sigs">
-      <div class="sig">
+      <div class="sig" hidden>
         <span class="lbl">Signature du président</span>
         <canvas class="pad" id="padPres" width="600" height="200" aria-label="Zone de signature du président"></canvas>
         <div class="row"><button type="button" class="btn small" id="presClear">Effacer</button>
@@ -428,7 +429,7 @@ $("logoutBtn").onclick=()=>{ls.del("vycaf-session");location.reload()};
 let KEY,S;
 const isAdmin=()=>ME&&ME.role==="admin";
 function myCats(){if(isAdmin()||!ME.cats||!ME.cats.length||ME.cats.includes("Toutes"))return CATS;return CATS.filter(c=>ME.cats.includes(c))}
-function blankMatch(n){return {id:uid(),equipe:"Équipe "+n,comp:"Championnat",coupe:"",adv:"",dom:"ext",date:"",ke:"",stade:"",adr:"",rdvh:"",rdvl:"",deph:"",trans:"",ret:"",enc:"",tenue:["Protège-tibias (obligatoires)","Chaussures de foot / crampons","Gourde d'eau"],tenueAutre:"",cons:"",players:[]}}
+function blankMatch(n){return {id:uid(),equipe:"Équipe "+n,comp:"Championnat",coupe:"",adv:"",dom:"ext",date:"",ke:"",stade:"",adr:"",maps:"",rdvh:"",rdvl:"",deph:"",trans:"",ret:"",enc:"",tenue:["Protège-tibias (obligatoires)","Chaussures de foot / crampons","Gourde d'eau"],tenueAutre:"",cons:"",players:[]}}
 function freshState(){const m=blankMatch(1);return {cat:myCats().includes("U11")?"U11":myCats()[0],roster:[],matches:[m],active:m.id,mode:"c",pvPlayer:"",absence:DEFAULT_ABS,resp:{name:ME.nom||"",tel:"",sig:null}}}
 function loadState(){
   KEY="vycaf-convoc-v2:"+ME.id;S=ls.get(KEY);
@@ -454,12 +455,18 @@ function season(d){const x=d?new Date(d+"T12:00:00"):new Date();const y=x.getFul
 const fem=()=>/F$/.test(S.cat);
 function compLabel(m){return m.comp==="Coupe"?(m.coupe||"Coupe"):m.comp}
 function tenueList(m){const t=m.tenue.slice();if(m.tenueAutre.trim())t.push(m.tenueAutre.trim());return t}
+function mapsUrl(m){
+  const raw=(m.maps||"").trim();
+  if(raw){try{const u=new URL(raw);const h=u.hostname.toLowerCase();if(u.protocol==="https:"&&(h==="maps.app.goo.gl"||h==="goo.gl"||/(^|\.)google\.[a-z.]+$/.test(h)))return u.href}catch(e){}}
+  const q=[m.stade,m.adr].filter(Boolean).join(", ");
+  return q?"https://www.google.com/maps/dir/?api=1&destination="+encodeURIComponent(q):"";
+}
 function selPlayers(m){return sortP(m.players.map(P).filter(Boolean))}
 function refOf(m,player){const d=(m.date||"").replace(/-/g,"").slice(2);const i=S.matches.indexOf(m)+1;let r=`${S.cat.replace(/\s/g,"")}-${d||"000000"}-${i}`;if(player){const k=selPlayers(m).indexOf(player);r+="-"+String(k+1).padStart(2,"0")}return r}
 
 /* ---------- Form binding ---------- */
-const FIELDS=["equipe","comp","coupe","adv","date","ke","stade","adr","rdvh","rdvl","deph","trans","ret","enc","tenueAutre","cons"];
-const fid={equipe:"m_equipe",comp:"m_comp",coupe:"m_coupe",adv:"m_adv",date:"m_date",ke:"m_ke",stade:"m_stade",adr:"m_adr",rdvh:"m_rdvh",rdvl:"m_rdvl",deph:"m_deph",trans:"m_trans",ret:"m_ret",enc:"m_enc",tenueAutre:"m_tenueAutre",cons:"m_cons"};
+const FIELDS=["equipe","comp","coupe","adv","date","ke","stade","adr","maps","rdvh","rdvl","deph","trans","ret","enc","tenueAutre","cons"];
+const fid={equipe:"m_equipe",comp:"m_comp",coupe:"m_coupe",adv:"m_adv",date:"m_date",ke:"m_ke",stade:"m_stade",adr:"m_adr",maps:"m_maps",rdvh:"m_rdvh",rdvl:"m_rdvl",deph:"m_deph",trans:"m_trans",ret:"m_ret",enc:"m_enc",tenueAutre:"m_tenueAutre",cons:"m_cons"};
 FIELDS.forEach(k=>$(fid[k]).addEventListener("input",e=>{M()[k]=e.target.value;if(k==="comp")$("coupeWrap").hidden=e.target.value!=="Coupe";changed(k==="equipe"||k==="adv"||k==="date")}));
 $("absence").addEventListener("input",e=>{S.absence=e.target.value;changed()});
 $("dom_d").onclick=()=>{M().dom="dom";syncSeg();changed(true)};
@@ -474,7 +481,7 @@ function syncSeg(){const m=M();$("dom_d").setAttribute("aria-pressed",m.dom==="d
 function fillForm(){const m=M();FIELDS.forEach(k=>$(fid[k]).value=m[k]||"");$("coupeWrap").hidden=m.comp!=="Coupe";$("absence").value=S.absence;
   $("cat").innerHTML=myCats().map(c=>`<option>${c}</option>`).join("");$("cat").value=S.cat;
   $("respName").value=S.resp.name;$("respTel").value=S.resp.tel||"";syncSeg();renderTenue();renderPresRO()}
-function renderPresRO(){$("presRO").innerHTML=CLUB.president?`<b>${esc(CLUB.president)}</b>${CLUB.presSig?"Signature du club : fournie":"Signature du club : non fournie"}${CLUB.stamp?" · tampon : fourni":""}`:`<b>Non renseigné</b>À compléter par l'administrateur.`}
+function renderPresRO(){$("presRO").innerHTML=CLUB.president?`<b>${esc(CLUB.president)}</b>${CLUB.stamp?"Tampon du club : fourni":"Nom seul, sans signature"}`:`<b>Non renseigné</b>À compléter par l'administrateur.`}
 function renderTenue(){const m=M();const all=TENUE.concat(m.tenue.filter(t=>!TENUE.includes(t)));$("tenue").innerHTML=all.map(t=>`<button type="button" class="chip" aria-pressed="${m.tenue.includes(t)}" data-t="${esc(t)}">${esc(t)}</button>`).join("");}
 $("tenue").onclick=e=>{const b=e.target.closest(".chip");if(!b)return;const m=M(),t=b.dataset.t;m.tenue=m.tenue.includes(t)?m.tenue.filter(x=>x!==t):TENUE.filter(x=>x===t||m.tenue.includes(x)).concat(m.tenue.filter(x=>!TENUE.includes(x)));renderTenue();changed()};
 
@@ -561,6 +568,7 @@ function renderPreview(){
     const st=`left:${o.x*u}px;top:${o.y*u}px;`;
     if(o.t==="rect")return `<div style="position:absolute;${st}width:${o.w*u}px;height:${o.h*u}px;background:${o.fill||"transparent"};${o.stroke?`border:${Math.max(1,(o.lw||.3)*u)}px solid ${o.stroke};`:""}border-radius:${(o.r||0)*u}px"></div>`;
     if(o.t==="img")return `<img src="${o.src}" alt="" style="position:absolute;${st}width:${o.w*u}px;height:${o.h*u}px;object-fit:contain;${o.opacity?`opacity:${o.opacity};`:""}">`;
+    if(o.t==="check")return `<svg style="position:absolute;left:${o.x*u}px;top:${o.y*u}px;width:${o.s*u}px;height:${o.s*u}px" viewBox="0 0 10 10"><polyline points="2.2,5.2 4.2,7.2 7.9,2.9" fill="none" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
     if(o.t==="line")return `<div style="position:absolute;left:${o.x*u}px;top:${o.y*u}px;width:${o.w*u}px;height:0;border-top:${Math.max(1,(o.lw||.3)*u)}px solid ${o.c}"></div>`;
     const fs=o.size*0.3528*u;const tx=o.align==="center"?"translateX(-50%)":o.align==="right"?"translateX(-100%)":"none";
     return `<div style="position:absolute;left:${o.x*u}px;top:${(o.y-o.size*0.3528*0.82)*u}px;font-size:${fs}px;line-height:1;font-weight:${o.bold?700:400};color:${o.color||"#141213"};white-space:pre;transform:${tx};${o.italic?"font-style:italic;":""}${o.cs?`letter-spacing:${o.cs*u}px;`:""}">${esc(o.s)}</div>`;
@@ -597,15 +605,18 @@ function layout(m,pl,player){
   text(title,105-tw/2,45.5,19,{bold:true,cs});
   text(`Catégorie ${S.cat}  ·  ${compLabel(m)}${m.equipe?"  ·  "+m.equipe:""}`,105,51.5,9.5,{color:G,align:"center"});
   // Rencontre
-  let y=56;rect(X0,y,TW,22,SOFT,null,2);
+  let y=56;rect(X0,y,TW,17,SOFT,null,2);
   const home=`VYCAF ${S.cat}`,away=(m.adv||"Adversaire").toUpperCase();
   let as=15;while(as>9.5&&textW(away,as,true)>80)as-=.5;
   const left=m.dom==="dom"?home:away,right=m.dom==="dom"?away:home,ls_=m.dom==="dom"?15:as,rs=m.dom==="dom"?as:15;
   text(left,98,y+10.5,ls_,{bold:true,align:"right"});text(right,112,y+10.5,rs,{bold:true});
   rect(100.8,y+4.4,8.4,8.4,R,null,4.2);text("VS",105,y+10,8.5,{bold:true,color:"#FFFFFF",align:"center"});
-  const badge=m.dom==="dom"?"MATCH À DOMICILE":"MATCH À L'EXTÉRIEUR";const bw=textW(badge,7.5,true)+6;
-  rect(105-bw/2,y+14.6,bw,5,m.dom==="dom"?K:"#FFFFFF",K,1);text(badge,105,y+18.1,7.5,{bold:true,color:m.dom==="dom"?"#FFFFFF":K,align:"center"});
-  y+=28;
+  // Bandeau domicile / extérieur, très visible
+  const badge=m.dom==="dom"?"MATCH À DOMICILE":"MATCH À L'EXTÉRIEUR";
+  rect(X0,y+18.5,TW,9.5,m.dom==="dom"?R:K,null,1.5);
+  const bcs=.8,bwid=textW(badge,13,true)+bcs*(badge.length-1);
+  text(badge,105-bwid/2,y+25.3,13,{bold:true,color:"#FFFFFF",cs:bcs});
+  y+=35;
   // Formule
   if(player){
     text("Madame, Monsieur,",X0,y,10);y+=5.2;
@@ -616,22 +627,30 @@ function layout(m,pl,player){
     const f=fem()?"Les joueuses dont les noms suivent sont convoquées pour la rencontre ci-dessus.":"Les joueurs dont les noms suivent sont convoqués pour la rencontre ci-dessus.";
     text(f,X0,y,10);y+=5;
   }
+  // Horaires clés
+  y+=1;const hw=(TW-3)/2;
+  const hbox=(x,lab,val,sub,dark)=>{rect(x,y,hw,21,dark?K:"#FFFFFF",dark?null:K,2,.6);
+    text(lab,x+hw/2,y+5.6,7.5,{bold:true,color:dark?"#FFFFFF":R,align:"center"});
+    text(val,x+hw/2,y+14.6,20,{bold:true,color:dark?"#FFFFFF":K,align:"center"});
+    if(sub)text(wrap(sub,hw-8,8)[0],x+hw/2,y+19,8,{color:dark?"#DDD6D6":G,align:"center"})};
+  hbox(X0,m.rdvl?"RENDEZ-VOUS":"RENDEZ-VOUS AU STADE",m.rdvh?hm(m.rdvh):"—",m.rdvl,false);
+  hbox(X0+hw+3,"COUP D'ENVOI",m.ke?hm(m.ke):"—",m.date?dateLong(m.date):"",true);
+  y+=24;
   // Grille d'informations
-  const cells=[];
+  const cells=[];const murl=mapsUrl(m);
   cells.push({l:"DATE",v:m.date?dateLong(m.date):"—",w:1});
-  cells.push({l:"RENDEZ-VOUS",v:m.rdvh?hm(m.rdvh):"—",s:m.rdvl,w:1});
-  cells.push({l:"COUP D'ENVOI",v:m.ke?hm(m.ke):"—",w:1});
-  cells.push({l:"LIEU DE LA RENCONTRE",v:m.stade||"—",s:m.adr,w:2});
-  cells.push({l:"DÉPART",v:m.deph?hm(m.deph):(m.trans?"":"—"),s:m.trans,w:1});
+  cells.push({l:"LIEU DE LA RENCONTRE",v:m.stade||"—",s:m.adr,link:murl,w:2});
+  if(m.deph||m.trans)cells.push({l:"DÉPART",v:m.deph?hm(m.deph):"",s:m.trans,w:1});
   if(m.ret)cells.push({l:"RETOUR PRÉVU",v:"vers "+hm(m.ret),w:1});
   if(m.enc)cells.push({l:"ENCADREMENT",v:m.enc,w:m.ret?2:3});
   const cw=TW/3;let col=0,rc=[];const rows=[];
   cells.forEach(c=>{if(col+c.w>3){rows.push(rc);rc=[];col=0}rc.push({...c,col});col+=c.w});rows.push(rc);
   rows.forEach(r=>{
-    let h=0;const prep=r.map(c=>{const w=cw*c.w-6;const vv=c.v?wrapB(c.v,w,10.5):[];const ss=c.s?wrap(c.s,w,8.5):[];h=Math.max(h,5+vv.length*4.4+ss.length*3.8+3);return{...c,vv,ss}});
+    let h=0;const prep=r.map(c=>{const w=cw*c.w-6;const vv=c.v?wrapB(c.v,w,10.5):[];const ss=c.s?wrap(c.s,w,8.5):[];h=Math.max(h,5+vv.length*4.4+ss.length*3.8+(c.link?4.6:0)+3);return{...c,vv,ss}});
     h=Math.max(h,14);
     prep.forEach(c=>{const x=X0+c.col*cw;rect(x,y,cw*c.w-2,h,"#FFFFFF",LN,1.2);rect(x,y,1.1,h,R);text(c.l,x+4,y+4.4,6.8,{bold:true,color:G});
-      let yy=y+9.2;c.vv.forEach(t=>{text(t,x+4,yy,10.5,{bold:true});yy+=4.4});c.ss.forEach(t=>{text(t,x+4,yy,8.5,{color:G});yy+=3.8})});
+      let yy=y+9.2;c.vv.forEach(t=>{text(t,x+4,yy,10.5,{bold:true});yy+=4.4});c.ss.forEach(t=>{text(t,x+4,yy,8.5,{color:G});yy+=3.8});
+      if(c.link){yy+=.6;text("> Itinéraire Google Maps (cliquez)",x+4,yy,8.5,{bold:true,color:"#1A56C4",link:c.link});line(x+4,yy+.8,textW("> Itinéraire Google Maps (cliquez)",8.5,true),"#1A56C4",.25)}});
     y+=h+2;
   });
   y+=2.5;
@@ -640,7 +659,7 @@ function layout(m,pl,player){
   if(tl.length){
     text("TENUE ET ÉQUIPEMENT À PRÉVOIR",X0,y,8.5,{bold:true});line(X0,y+1.5,TW,K,.3);y+=6.2;
     const half=Math.ceil(tl.length/2);
-    tl.forEach((t,i)=>{const cx=i<half?X0:105,cy=y+(i<half?i:i-half)*5;rect(cx,cy-2.8,3,3,"#FFFFFF",K,.3,.3);text(wrap(t,84,9.2)[0],cx+5,cy,9.2)});
+    tl.forEach((t,i)=>{const cx=i<half?X0:105,cy=y+(i<half?i:i-half)*5;rect(cx,cy-3,3.4,3.4,R,null,.5);O.push({t:"check",x:cx,y:cy-3,s:3.4});text(wrap(t,84,9.2)[0],cx+5.4,cy,9.2)});
     y+=half*5+2.5;
   }
   // Signatures (zone fixe en bas de page)
@@ -681,7 +700,7 @@ function layout(m,pl,player){
     if(s&&s.src){const bw=55,bh=21;const r=Math.min(bw/s.w,bh/s.h);O.push({t:"img",src:s.src,x,y:sigTop+11,w:s.w*r,h:s.h*r})}
     line(x,sigTop+34,72,LN,.3);
   };
-  sig(X0,"LE PRÉSIDENT",CLUB.president,CLUB.presSig,CLUB.stamp);
+  sig(X0,"LE PRÉSIDENT",CLUB.president,null,CLUB.stamp);
   sig(112,"L'ÉDUCATEUR RESPONSABLE "+S.cat.toUpperCase(),S.resp.name,S.resp.sig,null);
   // Pied de page
   rect(0,293.6,210,1.2,K);rect(0,294.8,210,2.2,R);
@@ -707,7 +726,8 @@ function draw(doc,L){
       if(o.r)doc.roundedRect(o.x,o.y,o.w,o.h,o.r,o.r,st);else doc.rect(o.x,o.y,o.w,o.h,st)}
     else if(o.t==="img"){try{if(o.opacity){doc.saveGraphicsState();doc.setGState(new doc.GState({opacity:o.opacity}))}doc.addImage(o.src,"PNG",o.x,o.y,o.w,o.h,undefined,"FAST");if(o.opacity)doc.restoreGraphicsState()}catch(e){}}
     else if(o.t==="line"){doc.setDrawColor(...hex(o.c));doc.setLineWidth(o.lw||.3);doc.line(o.x,o.y,o.x+o.w,o.y)}
-    else{doc.setFont("helvetica",o.bold?"bold":(o.italic?"italic":"normal"));doc.setFontSize(o.size);doc.setTextColor(...hex(o.color||"#141213"));const opt={};if(o.align)opt.align=o.align;if(o.cs)opt.charSpace=o.cs;doc.text(o.s,o.x,o.y,opt)}
+    else if(o.t==="check"){const k=o.s/10;doc.setDrawColor(255,255,255);doc.setLineWidth(.45);doc.setLineCap("round");doc.setLineJoin("round");doc.lines([[2*k,2*k],[3.7*k,-4.3*k]],o.x+2.2*k,o.y+5.2*k,[1,1],"S",false);doc.setLineCap("butt")}
+    else{doc.setFont("helvetica",o.bold?"bold":(o.italic?"italic":"normal"));doc.setFontSize(o.size);doc.setTextColor(...hex(o.color||"#141213"));const opt={};if(o.align)opt.align=o.align;if(o.cs)opt.charSpace=o.cs;if(o.link)doc.textWithLink(o.s,o.x,o.y,{url:o.link});else doc.text(o.s,o.x,o.y,opt)}
   });
 }
 function slug(s){return (s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^A-Za-z0-9]+/g,"-").replace(/^-|-$/g,"")}
@@ -739,6 +759,7 @@ function waText(){
   if(m.deph||m.trans)L.push(`🚗 Départ ${m.deph?hm(m.deph):""}${m.deph&&m.trans?" – ":""}${m.trans||""}`);
   if(m.ke)L.push(`🟢 Coup d'envoi ${hm(m.ke)}`);
   if(m.stade||m.adr)L.push(`📍 ${[m.stade,m.adr].filter(Boolean).join(", ")}`);
+  if(mapsUrl(m))L.push(`🗺️ Itinéraire : ${mapsUrl(m)}`);
   if(m.ret)L.push(`🔙 Retour prévu vers ${hm(m.ret)}`);
   const t=tenueList(m);if(t.length)L.push(`🎒 Tenue : ${t.join(", ")}`);
   if(m.cons)L.push(`ℹ️ ${m.cons}`);
